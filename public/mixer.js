@@ -71,34 +71,37 @@
             '</div><div class="fader-track"><div class="fader"><div></div></div></div></div>'
         );
         channel.append(fader);
-        $(fader).find('.fader').on('mousedown', function(e) {
+    
+        $(fader).find('.fader').on('touchstart mousedown', function(e) {
             var el = $(this),
-                pos = e.pageY,
+                pos = e.type === 'touchstart' ? e.originalEvent.touches[0].pageY : e.pageY,
                 offset = el.position().top;
-            $(document).mousemove(function(evt) {
-                var move = (evt.pageY - pos);
-                var top = (move + offset);
+    
+            $(document).on('touchmove mousemove', function(evt) {
+                var move = evt.type === 'touchmove' ? evt.originalEvent.touches[0].pageY - pos : evt.pageY - pos;
+                var top = move + offset;
+    
                 if ((top >= -35) && (top <= 260)) {
-                    el.css('top', (move + offset) +
-                        'px');
-                    //plus 35 so we have a positive range to deal with - by default the range is -35 to 250
-                    el.trigger('fader', (move + offset +
-                        35));
+                    el.css('top', top + 'px');
+                    el.trigger('fader', top + 35); // Adjust range
                 }
             });
-            $(document).on('mouseup', function() {
-                $(document).off('mousemove');
+    
+            $(document).on('touchend mouseup', function() {
+                $(document).off('touchmove mousemove');
             });
         });
+    
         $(fader).find('.fader').on('dblclick', function() {
             $(this).css({
                 "top": '30px'
             });
-            $(this).trigger('fader', (0 + 35 + $(this).position()
-                .top));
+            $(this).trigger('fader', 0 + 35 + $(this).position().top);
         });
+    
         return fader;
-    };
+    }
+
 
     /* I need better trigonometry */
     function RotaryKnob(channel, label, className) {
@@ -117,57 +120,56 @@
                 } else {
                     var minute = $('<div class="minutes"></div>');
                 }
-                minute.css('-webkit-transform', 'rotate(' + degree +
-                    'deg)');
+                minute.css('-webkit-transform', 'rotate(' + degree + 'deg)');
                 notches.append(minute);
             }
             degree = degree + 24;
         }
-        $(knobTemplate).find('.dial').on('mousedown', function(e) {
+    
+        $(knobTemplate).find('.dial').on('touchstart mousedown', function(e) {
             var el = $(this),
                 offset = el.offset(),
                 center_x,
                 center_y,
-                mouse_x,
+                touch_x = e.type === 'touchstart' ? e.originalEvent.touches[0].pageX : e.pageX,
+                touch_y = e.type === 'touchstart' ? e.originalEvent.touches[0].pageY : e.pageY,
                 radians,
                 degree,
                 degreeRatio;
-            $(document).mousemove(function(evt) {
-                center_x = (offset.left) + (el.width() /
-                    2);
-                center_y = (offset.top) + (el.height() /
-                    2);
-                mouse_x = evt.pageX;
-                var mouse_y = evt.pageY;
-                radians = Math.atan2(mouse_x - center_x,
-                    mouse_y - center_y);
-                degree = (radians * (180 / Math.PI) * -
-                    1);
+    
+            $(document).on('touchmove mousemove', function(evt) {
+                center_x = (offset.left) + (el.width() / 2);
+                center_y = (offset.top) + (el.height() / 2);
+                var input_x = evt.type === 'touchmove' ? evt.originalEvent.touches[0].pageX : evt.pageX;
+                var input_y = evt.type === 'touchmove' ? evt.originalEvent.touches[0].pageY : evt.pageY;
+                radians = Math.atan2(input_x - center_x, input_y - center_y);
+                degree = (radians * (180 / Math.PI) * -1);
                 if (degree < 0) {
                     degree = degree + 360;
                 }
                 if (degree >= 50 && degree <= 310) {
-                    el.css('-moz-transform', 'rotate(' +
-                        degree + 'deg)');
-                    el.css('-webkit-transform',
-                        'rotate(' + degree + 'deg)'
-                    );
+                    el.css('-moz-transform', 'rotate(' + degree + 'deg)');
+                    el.css('-webkit-transform', 'rotate(' + degree + 'deg)');
                     degreeRatio = ((degree - 180) / 4);
                     el.trigger('change', degreeRatio);
                 }
             });
-            $(document).on('mouseup', function() {
-                $(document).off('mousemove');
+    
+            $(document).on('touchend mouseup', function() {
+                $(document).off('touchmove mousemove');
             });
         });
+    
         $(knobTemplate).find('.dial').on('dblclick', function() {
             $(this).css({
                 "-webkit-transform": 'rotate(180deg)'
             });
-            $(this).trigger('change', 0)
+            $(this).trigger('change', 0);
         });
+    
         return knobTemplate;
-    };
+    }
+
 
     function Timer() {
         this.offset;
